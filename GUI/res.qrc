@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="res/">
+        <file alias="douban.ico">res/douban.ico</file>
+    </qresource>
+</RCC>
