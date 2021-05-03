@@ -1,5 +1,4 @@
 import res  # 导入资源文件
-import sys
 import pymysql
 from Sign import SignWindow
 # from MainWindow import MainWindow
@@ -99,31 +98,23 @@ class Login(QWidget):
             result = self.cur.fetchone()
             if result:
                 # 有该账号
-                self.account_presence = True
                 pwd_true = result[2]
+                if pwd_true == pwd_input:
+                    self.close()  # 关闭注册界面
+                    #self.MainWindow = MainWindow(user_input)
+                    #self.MainWindow.show()
+                else:
+                    QMessageBox.information(self, '通知', '密码错误！')
+                    self.pwd_line.clear()
             else:
-                self.account_presence = False
+                print('没有这个账号')
+                msg_box = QMessageBox(self)
+                msg_box.setWindowTitle("提示")
+                msg_box.setText("系统中无此账号！您需要注册")
+                msg_box.addButton('好的', QMessageBox.AcceptRole)
+                msg_box.exec_()
         except Exception as e:
             print(e)
-        # 有
-        if self.account_present:
-            # 要检查数据库中密码与输入密码是否对应
-            if pwd_true == pwd_input:
-                QMessageBox.information(self, '通知', '成功登录!')
-                self.close() # 关闭注册界面
-                #self.MainWindow = MainWindow(user_input)
-                #self.MainWindow.show()
-            else:
-                # 密码不对应
-                QMessageBox.information(self, '通知', '密码错误！')
-        # 无账号则提示需要注册
-        else:
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle("提示")
-            msg_box.setText("系统中无此账号！您需要注册")
-            msg_box.addButton('好的', QMessageBox.AcceptRole)
-            msg_box.exec_()
-        self.pwd_line.clear()
 
     def sign_up_page(self):
         """跳出注册界面"""
