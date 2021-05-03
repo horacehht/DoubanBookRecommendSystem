@@ -2,7 +2,7 @@ import res  # 导入资源文件
 import sys
 import pymysql
 from Sign import SignWindow
-from MainWindow import MainWindow
+# from MainWindow import MainWindow
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, \
     QGridLayout, QApplication, QMessageBox
@@ -31,7 +31,7 @@ class Login(QWidget):
         self.user_line = QLineEdit(self)  # 单行文本编辑器
         self.pwd_line = QLineEdit(self)
         self.login_button = QPushButton('登录', self)  # 按钮
-        self.signin_button = QPushButton('注册', self)
+        self.signup_button = QPushButton('注册', self)
 
         # 布局实例化
         self.g_layout = QGridLayout()  # 网格布局
@@ -52,9 +52,9 @@ class Login(QWidget):
         self.g_layout.addWidget(self.pwd_line, 1, 1, 2, 1)
 
         self.h_layout.addWidget(self.login_button)  # 添加登录按钮
-        self.h_layout.addWidget(self.signin_button)  # 添加注册按钮
+        self.h_layout.addWidget(self.signup_button)  # 添加注册按钮
 
-        self.v_layout.addLayout(self.g_layout)  # 将布局添加到框的末尾
+        self.v_layout.addLayout(self.g_layout)
         self.v_layout.addLayout(self.h_layout)
 
         self.setLayout(self.v_layout)
@@ -63,11 +63,10 @@ class Login(QWidget):
         """按钮状态的初始化及信号槽连接"""
         # 按钮状态设置
         self.login_button.setEnabled(False)  # 登入状态初始不可点击
-        self.signin_button.setEnabled(True)  # 注册可以点击
+        self.signup_button.setEnabled(True)  # 注册可以点击
         # 槽函数连接
         self.login_button.clicked.connect(self.log_in)
-        self.signin_button.clicked.connect(self.sign_up_page)
-
+        self.signup_button.clicked.connect(self.sign_up_page)
 
     def editline_init(self):
         """文本输入框初始化及信号槽连接"""
@@ -92,26 +91,31 @@ class Login(QWidget):
     def log_in(self):
         """登录函数"""
         # 在数据库中查询有无此账号
-        user = self.user_line.text()
-        pwd = self.pwd_line.text()
-        sql = "SELECT * FROM USERINFO WHERE username = %s" % user
+        user_input = self.user_line.text()
+        pwd_input = self.pwd_line.text()
+        sql_f = "SELECT * FROM USERINFO WHERE username = '%s'" % user_input
         try:
-            self.cur.execute(sql)
-            results = self.cur.fetchall()
-            if results:
+            self.cur.execute(sql_f)
+            result = self.cur.fetchone()
+            if result:
                 # 有该账号
                 self.account_presence = True
+                pwd_true = result[2]
             else:
                 self.account_presence = False
         except Exception as e:
-            # print(e)
-            pass
+            print(e)
         # 有
         if self.account_present:
-            QMessageBox.information(self, '通知', '成功登录!')
-            self.close() # 关闭注册界面
-            self.MainWindow = MainWindow(self.user_line.text())
-            self.MainWindow.show()
+            # 要检查数据库中密码与输入密码是否对应
+            if pwd_true == pwd_input:
+                QMessageBox.information(self, '通知', '成功登录!')
+                self.close() # 关闭注册界面
+                #self.MainWindow = MainWindow(user_input)
+                #self.MainWindow.show()
+            else:
+                # 密码不对应
+                QMessageBox.information(self, '通知', '密码错误！')
         # 无账号则提示需要注册
         else:
             msg_box = QMessageBox(self)
@@ -119,6 +123,7 @@ class Login(QWidget):
             msg_box.setText("系统中无此账号！您需要注册")
             msg_box.addButton('好的', QMessageBox.AcceptRole)
             msg_box.exec_()
+        self.pwd_line.clear()
 
     def sign_up_page(self):
         """跳出注册界面"""
