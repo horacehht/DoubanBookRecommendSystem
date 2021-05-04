@@ -1,4 +1,5 @@
 import sys
+import res # 导入资源文件
 import pandas as pd
 import pymysql
 from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QPushButton, QTextBrowser, QTableWidgetItem, \
