@@ -10,7 +10,7 @@ def getW(user_books):
     """
     计算 书籍相似度矩阵W
     W[u][v]表示物品u和物品v的相似度
-    C[u][v]表示喜欢u有喜欢v物品的用户有多少个
+    C[u][v]表示喜欢u又喜欢v物品的用户有多少个
     N[u]表示有多少用户喜欢物品u
     :param user_books: 用户及其评分过的书
     :return: 书籍相似度矩阵W，书籍相关矩阵
@@ -99,3 +99,5 @@ def GetRecommendation(user, user_books, W, relatedbooks,k ,N ,k_similar_books):
             rank[rank_key] = 0
 
     return dict(sorted(rank.items(),key=lambda x:x[1],reverse=True)[0:N])
+
+def rec_hot_books():

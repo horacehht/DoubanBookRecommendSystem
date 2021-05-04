@@ -11,7 +11,6 @@ class Login(QWidget):
     def __init__(self):
         super().__init__()
         # 数据库操作
-        self.account_presence = False  # 账号是否存在的状态量
         self.conn = pymysql.connect(  # 连接本地数据库
             host="localhost",
             user="root",  # 要填root
