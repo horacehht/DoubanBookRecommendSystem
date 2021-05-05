@@ -1,4 +1,5 @@
 import res  # 导入资源文件
+import sys
 import pymysql
 from Sign import SignWindow
 # from MainWindow import MainWindow
@@ -9,7 +10,7 @@ from PyQt5.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout, QWidget, QLineEdit
 
 class Login(QWidget):
     def __init__(self):
-        super().__init__()
+        super(Login, self).__init__()
         # 数据库操作
         self.conn = pymysql.connect(  # 连接本地数据库
             host="localhost",
@@ -99,6 +100,7 @@ class Login(QWidget):
                 # 有该账号
                 pwd_true = result[2]
                 if pwd_true == pwd_input:
+                    QMessageBox.information(self, "通知", "登陆成功")
                     self.close()  # 关闭注册界面
                     #self.MainWindow = MainWindow(user_input)
                     #self.MainWindow.show()
@@ -118,3 +120,10 @@ class Login(QWidget):
     def sign_up_page(self):
         """跳出注册界面"""
         self.sign_up_window.exec_()
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    demo = Login()
+    demo.show()
+    sys.exit(app.exec_())

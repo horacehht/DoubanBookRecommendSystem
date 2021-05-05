@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QPushButton, QTextBro
     QVBoxLayout, QHBoxLayout, QLineEdit, QTableWidget, QHeaderView
 from PyQt5.QtGui import QIcon
 from algorithm import Recommend
-from user_center import UserCenter
 
 
 class MainWindow():
