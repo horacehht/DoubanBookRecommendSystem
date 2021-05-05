@@ -48,8 +48,10 @@ class SearchWindow(QWidget):
         self.default_button.clicked.connect(self.default_sort)
         self.by_score_button = QPushButton("评分(降序)", self)
         self.by_score_button.clicked.connect(self.score_sort)
+        self.score_times = 1
         self.by_ratingnum_button = QPushButton("评论人数(降序)", self)
         self.by_ratingnum_button.clicked.connect(self.ratingnum_sort)
+        self.rating_times = 1
 
         self.search_browser = QTextBrowser(self)
 
@@ -75,12 +77,28 @@ class SearchWindow(QWidget):
         self.setLayout(self.v_layout)
 
     def ratingnum_sort(self):
-        self.changed_df = self.changed_df.sort_values(by=['rating_num'], ascending=False)
-        self.Fuzzy_search(self.search_edit.text())
+        if self.rating_times % 2 == 1:
+            self.changed_df = self.changed_df.sort_values(by=['rating_num'], ascending=False)
+            self.Fuzzy_search(self.search_edit.text())
+            # 搜索完后按钮文字便问评论人数(升序)
+            self.by_ratingnum_button.setText("评论人数(升序)")
+        else:
+            self.changed_df = self.changed_df.sort_values(by=['rating_num'], ascending=True)
+            self.Fuzzy_search(self.search_edit.text())
+            self.by_ratingnum_button.setText("评论人数(降序)")
+        self.rating_times += 1
 
     def score_sort(self):
-        self.changed_df = self.changed_df.sort_values(by=['score'], ascending=False)
-        self.Fuzzy_search(self.search_edit.text())
+        if self.score_times % 2 == 0:
+            self.changed_df = self.changed_df.sort_values(by=['score'], ascending=False)
+            self.Fuzzy_search(self.search_edit.text())
+            self.by_score_button.setText("评分(升序)")
+            self.score_times += 1
+        else:
+            self.changed_df = self.changed_df.sort_values(by=['score'], ascending=True)
+            self.Fuzzy_search(self.search_edit.text())
+            self.by_score_button.setText("评分(降序)")
+            self.score_times += 1
 
     def default_sort(self):
         self.changed_df = self.books_df
