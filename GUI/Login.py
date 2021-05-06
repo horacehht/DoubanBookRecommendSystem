@@ -92,13 +92,13 @@ class Login(QWidget):
         # 在数据库中查询有无此账号
         user_input = self.user_line.text()
         pwd_input = self.pwd_line.text()
-        sql_f = "SELECT * FROM USERINFO WHERE username = '%s'" % user_input
+        sql_f = "SELECT * FROM douban_book_users WHERE nickname = '%s'" % user_input
         try:
             self.cur.execute(sql_f)
             result = self.cur.fetchone()
             if result:
                 # 有该账号
-                pwd_true = result[2]
+                pwd_true = result[4]
                 if pwd_true == pwd_input:
                     QMessageBox.information(self, "通知", "登陆成功")
                     self.close()  # 关闭注册界面

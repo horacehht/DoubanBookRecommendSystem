@@ -1,7 +1,10 @@
+import res
+import sys
 import pymysql
+import json
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QDialog, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QMessageBox
-
+from random import randint
 
 class SignWindow(QDialog):
     def __init__(self):
@@ -88,9 +91,9 @@ class SignWindow(QDialog):
         user_input = self.user_line.text()
         pwd_input = self.pwd_line.text()
         # 在数据库中查询是否有该账号
-        sql_f = "SELECT * FROM USERINFO WHERE username = '%s'" % user_input
+        sql_f1 = "SELECT * FROM douban_book_users WHERE nickname = '%s'" % user_input
         try:
-            self.cur.execute(sql_f)
+            self.cur.execute(sql_f1)
             result = self.cur.fetchone()
             if result:
                 # 如果存在这个账号
@@ -98,10 +101,29 @@ class SignWindow(QDialog):
             else:
                 # 如果找不到该用户，就说明还没注册过
                 QMessageBox.information(self, '通知', '注册成功！')
+                random_id = str(randint(1, 200000))
+                # 查询生成的这个id有没有跟原来数据库中的id重复了，没有重复的话就插入，重复的就再生成一次再查，直到没有重复
+                sql_f2 = "SELECT * FROM douban_book_users WHERE id = '%s'" % random_id
+                while 1:
+                    try:
+                        self.cur.execute(sql_f2)
+                        result = self.cur.fetchone()
+                        if result:
+                            random_id = str(randint(1, 200000))
+                            continue
+                        else:
+                            break
+                    except Exception as e:
+                        print(e)
+                # 这样id就不是重复的了
+
                 # 将该数据插入数据库
-                sql_i = """INSERT INTO USERINFO(username, password)
-                VALUES(%s, %s)"""
-                data = (user_input, pwd_input)
+                sql_i = """INSERT INTO douban_book_users(id, nickname, read_num, read_book_and_score, password)
+                                VALUES(%s, %s, %s, %s, %s)"""
+                read_books = 0  # 新用户读的书默认为0
+                book_and_score = dict()  # 新用户没有看过书，生成一个空字典
+                read_str = json.dumps(book_and_score, ensure_ascii=False)
+                data = (random_id, user_input, read_books, read_str, pwd_input)
                 try:
                     # 执行sql语句
                     self.cur.execute(sql_i, data)
