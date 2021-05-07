@@ -38,10 +38,16 @@ class SearchWindow(QWidget):
         self.setWindowTitle("书籍搜索")
         self.setWindowIcon(QIcon(':res/douban.ico'))  # 设置窗口图标
         self.resize(600, 800)
+        self.value = 0  # 0代表按书名搜索，1代表按作者搜素
         self.search_edit = QLineEdit(self)
         self.search_edit.setPlaceholderText('输入想搜索的内容')
-        self.search_button = QPushButton("搜索", self)
-        self.search_button.clicked.connect(lambda: self.Fuzzy_search(self.search_edit.text()))
+        self.search_label = QLabel("搜索方式: ")
+        self.name_search_button = QPushButton("书名搜索", self)
+        self.name_search_button.clicked.connect(self.value_0)
+        self.name_search_button.clicked.connect(lambda: self.Fuzzy_search(self.search_edit.text()))
+        self.author_search_button = QPushButton("作者搜索", self)
+        self.author_search_button.clicked.connect(self.value_1)
+        self.author_search_button.clicked.connect(lambda: self.Fuzzy_search(self.search_edit.text()))
 
         self.sort_label = QLabel("      显示方式:", self)
         self.default_button = QPushButton("默认", self)
@@ -63,7 +69,9 @@ class SearchWindow(QWidget):
     def layout_init(self):
         """布局设置，目的是使init方法看起来简洁"""
         self.h1_layout.addWidget(self.search_edit)
-        self.h1_layout.addWidget(self.search_button)
+        self.h1_layout.addWidget(self.search_label)
+        self.h1_layout.addWidget(self.name_search_button)
+        self.h1_layout.addWidget(self.author_search_button)
 
         self.h2_layout.addWidget(self.sort_label)
         self.h2_layout.addWidget(self.default_button)
@@ -104,32 +112,45 @@ class SearchWindow(QWidget):
         self.changed_df = self.books_df
         self.Fuzzy_search(self.search_edit.text())
 
+    # 通过self.value值判别按下的是书名搜索还是作者搜索按钮
+    def value_0(self):
+        self.value = 0
+
+    def value_1(self):
+        self.value = 1
+
     def Fuzzy_search(self, keyword):
         """
-        模糊搜索功能
+        模糊搜索功能，书名与作者
         :param keyword: 搜索的关键字
         """
         self.search_browser.clear()
         mark = 1
+        self.matched_num = 0
+        self.search_by = ['book_name', 'author']
         if keyword == '':
             mark = 0
             self.search_browser.clear()
             self.search_browser.setText("<h2>输入不能为空!</h2>")
         else:
-            self.search_browser.clear()
-            if not list(self.changed_df[self.changed_df['book_name'].str.contains('%s' % str(keyword))].book_name):
-                # contains是包含，所以达到了模糊搜索的功能
-                self.search_browser.append("<h2>很抱歉,没有找到相关书籍!</h2>")
-            # :10是限制显示搜索条数
-            self.book_list = list(self.changed_df[self.changed_df['book_name'].str.contains('{}'.format(keyword))].book_name[:10])
-            self.score_list = list(self.changed_df[self.changed_df['book_name'].str.contains('{}'.format(keyword))].score[:10])
-            self.rating_num_list = list(self.changed_df[self.changed_df['book_name'].str.contains('{}'.format(keyword))].rating_num[:10])
-            self.author_list = list(self.changed_df[self.changed_df['book_name'].str.contains('{}'.format(keyword))].author[:10])
+            try:
+                self.search_browser.clear()
+                if not list(self.changed_df[self.changed_df[self.search_by[self.value]].str.contains('%s' % str(keyword))][self.search_by[self.value]]):
+                    # contains是包含，所以达到了模糊搜索的功能
+                    self.search_browser.append("<h2>很抱歉,没有找到相关书籍!</h2>")
+                # :10是限制显示搜索条数
 
-            matched_num = len(self.book_list) if len(self.book_list) < 10 else 10
+                self.book_list = list(self.changed_df[self.changed_df[self.search_by[self.value]].str.contains('{}'.format(keyword))].book_name[:10])
+                self.score_list = list(self.changed_df[self.changed_df[self.search_by[self.value]].str.contains('{}'.format(keyword))].score[:10])
+                self.rating_num_list = list(self.changed_df[self.changed_df[self.search_by[self.value]].str.contains('{}'.format(keyword))].rating_num[:10])
+                self.author_list = list(self.changed_df[self.changed_df[self.search_by[self.value]].str.contains('{}'.format(keyword))].author[:10])
+            except Exception as e:
+                print(e)
+
+            self.matched_num = len(self.book_list) if len(self.book_list) < 10 else 10
 
         try:
-            for i in range(matched_num):
+            for i in range(self.matched_num):
                 if mark == 0:
                     break  # 如果空就不搜索
                 self.book_name = self.book_list[i]

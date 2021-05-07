@@ -27,7 +27,7 @@ class UserWindow(QWidget):
         self.num_label.setText("<h1>您在豆瓣喜欢" + str(num) + "本书</h1>")
         try:
             self.browser.append("您最近喜欢的三本书为: ")
-            for like_book in like_books[:3]:
+            for like_book in like_books:
                 self.browser.append("《" + like_book +"》")
 
             self.v_layout.addWidget(self.user_label)
@@ -45,7 +45,7 @@ class UserWindow(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     user = 'Horace'
-    books = ["a", "b", "c", "d", "e"]
+    books = ["a", "b"]
     book_nums = len(books)
     user_page = UserWindow(user, book_nums, books)
     user_page.show()
