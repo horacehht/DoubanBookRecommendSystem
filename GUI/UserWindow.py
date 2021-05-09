@@ -16,12 +16,12 @@ class UserWindow(QWidget):
         super(UserWindow, self).__init__()
         self.setWindowTitle("个人主页")
         self.setWindowIcon(QIcon(':res/douban.ico'))  # 设置窗口图标
-        self.resize(400, 200)
+        self.resize(500, 250)
 
         self.user_label = QLabel(self)
         self.user_label.setText("<h1>您好！" + username + "</h1>")
         self.num_label = QLabel(self)
-        self.num_label.setText("<h1>您在豆瓣喜欢" + str(num) + "本书</h1>")
+        self.num_label.setText("<h1>您在豆瓣读过" + str(num) + "本书</h1>")
         self.browser = QTextBrowser(self)
         self.change_pwd_button = QPushButton("修改密码", self)
         self.change_pwd_button.clicked.connect(self.show_change_page)
@@ -34,9 +34,9 @@ class UserWindow(QWidget):
         self.v_layout.addWidget(self.change_pwd_button)
 
         try:
-            self.browser.append("您最近喜欢的三本书为: ")
-            for like_book in like_books:
-                self.browser.append("《" + like_book +"》")
+            self.browser.append("<h2>您最近读过的三本书为: </h2>")
+            for like_book in like_books[::-1][:3]:
+                self.browser.append("<h3>《" + like_book + "》</h3>")
         except Exception as e:
             print(e)
 
