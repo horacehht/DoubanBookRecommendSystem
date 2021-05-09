@@ -8,13 +8,14 @@ from PyQt5.QtGui import QIcon, QPixmap
 
 
 class BookInfo(QWidget):
-    def __init__(self, name):
+    def __init__(self, name, user):
         super(BookInfo, self).__init__()  # 使用super函数可以实现子类使用父类的方法
         self.setWindowTitle("书籍详细信息")
         self.setWindowIcon(QIcon(':res/douban.ico'))  # 设置窗口图标
         self.resize(1400, 800)
-        self.name = name
-        # 书籍信息
+        self.name = name  # 这里的name指的是书名
+        self.user = user  # 用户名
+        self.user_score = 0  # 用户对这本书的评分
         # 数据库操作
         self.conn = pymysql.connect(  # 连接本地数据库
             host="localhost",
@@ -24,6 +25,7 @@ class BookInfo(QWidget):
             charset="utf8"
         )
         self.cur = self.conn.cursor()
+
         sql_f = "SELECT * FROM douban_book_release"
         try:
             self.cur.execute(sql_f)
@@ -34,7 +36,22 @@ class BookInfo(QWidget):
             self.books_df = pd.DataFrame([list(i) for i in results], columns=columnNames)
         except Exception as e:
             print(e)
-        self.conn.close()  # 关闭连接
+
+        sql_f1 = "SELECT * FROM douban_book_users WHERE nickname = %s"
+        try:
+            data = self.user
+            self.cur.execute(sql_f1, data)
+            result = self.cur.fetchone()
+            self.user_read_and_scores = result[3]
+            if not self.user_read_and_scores[-1] == '}':
+                self.user_read_and_scores = eval(self.user_read_and_scores + '}')
+            else:
+                self.user_read_and_scores = eval(self.user_read_and_scores)
+            self.read_num = len(self.user_read_and_scores)
+        except Exception as e:
+            print(e)
+        if self.name in self.user_read_and_scores.keys():
+            self.user_score = self.user_read_and_scores[self.name]
 
         self.books_detailed = self.books_df.iloc[:, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]  # 不选封面链接和读者
         try:
@@ -76,8 +93,6 @@ class BookInfo(QWidget):
             self.page_num_label = QLabel("<h2>" + "书籍页数: " + self.page_num + "</h2>")
             self.ISBN_label = QLabel("<h2>" + "ISBN: " + self.ISBN + "</h2>")
 
-            self.like_button = QPushButton("喜欢这本书", self)
-
             self.introduction_label = QLabel("<h1><b>书籍简介:</b></h1>", self)
             self.introduction_browser = QTextBrowser(self)
             self.introduction_browser.setText("<h2>" + self.introduction + "</h2>")
@@ -85,28 +100,10 @@ class BookInfo(QWidget):
             self.v1_layout = QVBoxLayout()
             self.v2_layout = QVBoxLayout()
             self.h_layout = QHBoxLayout()
+            self.h1_layout = QHBoxLayout()
+            self.v_special_layout = QHBoxLayout()
             self.v_layout = QVBoxLayout()
-
-            self.v1_layout.addWidget(self.author_label)
-            self.v1_layout.addWidget(self.press_label)
-            self.v1_layout.addWidget(self.publishing_year_label)
-            self.v1_layout.addWidget(self.ISBN_label)
-            self.v1_layout.addWidget(self.page_num_label)
-
-
-            self.v2_layout.addWidget(self.score_label)
-            self.v2_layout.addWidget(self.rating_num_label)
-            self.v2_layout.addWidget(self.like_button)
-
-            self.h_layout.addWidget(self.pic)
-            self.h_layout.addLayout(self.v1_layout)
-            self.h_layout.addLayout(self.v2_layout)
-
-            self.v_layout.addLayout(self.h_layout)
-            self.v_layout.addWidget(self.introduction_label)
-            self.v_layout.addWidget(self.introduction_browser)
-
-            self.setLayout(self.v_layout)
+            self.layout_init()
 
         except Exception as e:
             print(e)
@@ -116,9 +113,108 @@ class BookInfo(QWidget):
             self.h_layout.addWidget(self.no_find)
             self.setLayout(self.h_layout)
 
+    def layout_init(self):
+        self.v1_layout.addWidget(self.author_label)
+        self.v1_layout.addWidget(self.press_label)
+        self.v1_layout.addWidget(self.publishing_year_label)
+        self.v1_layout.addWidget(self.ISBN_label)
+        self.v1_layout.addWidget(self.page_num_label)
+
+        if self.user_score == 0:
+            self.like_init()
+            self.h1_layout.addWidget(self.rate1_button)
+            self.h1_layout.addWidget(self.rate2_button)
+            self.h1_layout.addWidget(self.rate3_button)
+            self.h1_layout.addWidget(self.rate4_button)
+            self.h1_layout.addWidget(self.rate5_button)
+        else:
+            self.user_rating_label = QLabel("<h1>您给本书的评分为: " + str(self.user_score) + "</h1>", self)
+            self.v_special_layout.addWidget(self.user_rating_label)
+
+        self.v2_layout.addWidget(self.score_label)
+        self.v2_layout.addWidget(self.rating_num_label)
+        if self.user_score == 0:
+            self.v2_layout.addWidget(self.like_label)
+            self.v2_layout.addLayout(self.h1_layout)
+        else:
+            self.v2_layout.addLayout(self.v_special_layout)
+
+        self.h_layout.addWidget(self.pic)
+        self.h_layout.addLayout(self.v1_layout)
+        self.h_layout.addLayout(self.v2_layout)
+
+        self.v_layout.addLayout(self.h_layout)
+        self.v_layout.addWidget(self.introduction_label)
+        self.v_layout.addWidget(self.introduction_browser)
+
+        self.setLayout(self.v_layout)
+
+    def like_init(self):
+        self.like_label = QLabel("<h2>觉得这本书怎么样?给它评个分吧!</h2>", self)
+        self.rate1_button = QPushButton("1分", self)
+        self.rate1_button.clicked.connect(self.s1)
+        self.rate2_button = QPushButton("2分", self)
+        self.rate2_button.clicked.connect(self.s2)
+        self.rate3_button = QPushButton("3分", self)
+        self.rate3_button.clicked.connect(self.s3)
+        self.rate4_button = QPushButton("4分", self)
+        self.rate4_button.clicked.connect(self.s4)
+        self.rate5_button = QPushButton("5分", self)
+        self.rate5_button.clicked.connect(self.s5)
+
+    def visible_init(self):
+        self.rate1_button.setVisible(False)
+        self.rate2_button.setVisible(False)
+        self.rate3_button.setVisible(False)
+        self.rate4_button.setVisible(False)
+        self.rate5_button.setVisible(False)
+        self.like_label.setVisible(False)
+
+    def update_user_data(self):
+        self.read_num += 1
+        self.user_read_and_scores.setdefault(self.name, self.user_score)
+        sql_update = "UPDATE douban_book_users SET read_num=%s, read_book_and_score=%s WHERE nickname=%s"
+        data = (self.read_num, str(self.user_read_and_scores), self.user)
+        try:
+            self.cur.execute(sql_update, data)
+            self.conn.commit()
+        except Exception as e:
+            print(e)
+            self.conn.rollback()
+
+    def s1(self):
+        self.user_score = 1
+        self.visible_init()
+        self.layout_init()
+        self.update_user_data()
+
+    def s2(self):
+        self.user_score = 2
+        self.visible_init()
+        self.layout_init()
+        self.update_user_data()
+
+    def s3(self):
+        self.user_score = 3
+        self.visible_init()
+        self.layout_init()
+        self.update_user_data()
+
+    def s4(self):
+        self.user_score = 4
+        self.visible_init()
+        self.layout_init()
+        self.update_user_data()
+
+    def s5(self):
+        self.user_score = 5
+        self.visible_init()
+        self.layout_init()
+        self.update_user_data()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    info = BookInfo("不老泉")
+    info = BookInfo("不老泉", "小蓝")
     info.show()
     sys.exit(app.exec_())

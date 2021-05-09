@@ -2,9 +2,10 @@ import sys
 import res
 import re
 import pymysql
+import datetime
 import pandas as pd
 from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QPushButton, QTextBrowser, QTableWidgetItem, \
-    QVBoxLayout, QHBoxLayout, QLineEdit, QTableWidget, QHeaderView
+    QVBoxLayout, QHBoxLayout, QLineEdit, QTableWidget, QHeaderView, QAbstractItemView
 from PyQt5.QtGui import QIcon
 from algorithm.Recommend import RecommendItemCF
 from UserWindow import UserWindow
@@ -15,11 +16,10 @@ from SearchWindow import SearchWindow
 class MainWindow(QWidget):
     def __init__(self, user):
         super(MainWindow, self).__init__()
-
+        self.user = user
         self.setWindowTitle("豆瓣书籍推荐系统")
         self.setWindowIcon(QIcon(':res/douban.ico'))  # 设置窗口图标
         self.resize(1400, 800)
-
         # 数据库操作
         self.conn = pymysql.connect(  # 连接本地数据库
             host="localhost",
@@ -57,7 +57,6 @@ class MainWindow(QWidget):
         self.books_df = self.books_df.iloc[:, [0, 1, 3, 4, 5]]  # 选取了书名，作者，出版年份，评分， 评分人数
 
         # 传给UserWindow的参数
-        self.user = user
         self.user_index = self.user_df[self.user_df['nickname'] == self.user].index[0]
         self.user_read_num = self.user_df.iloc[self.user_index][1]
         self.user_read_books = list(eval(self.user_df.iloc[self.user_index][2]).keys())
@@ -67,8 +66,8 @@ class MainWindow(QWidget):
         self.recommend_table = QTableWidget(self)
         self.hot_books_label = QLabel("<h1>热门书籍:</h1>", self)
         self.hot_books_table = QTableWidget(self)
-        hot_books_ori = self.books_df[self.books_df.score > 8.8]
-        self.hot_books = hot_books_ori[hot_books_ori.rating_num > 50000]  # 选取评分大于8.8，评论人数大于70000的书籍
+        hot_books_ori = self.books_df[self.books_df.score > 8.5]
+        self.hot_books = hot_books_ori[hot_books_ori.rating_num > 50000]  # 选取评分大于8.5，评论人数大于50000的书籍
         self.hot_books = self.hot_books.sort_values(by=['rating_num'], ascending=True)  # 按评论人数进行排序
 
         self.user_window_button = QPushButton("个人主页", self)
@@ -83,9 +82,10 @@ class MainWindow(QWidget):
         self.book_to_know_line.setPlaceholderText("请在此处填入想查询详细信息的书籍")
         self.book_info_button.clicked.connect(lambda: self.show_book_info(self.book_to_know_line.text()))
         # book_name = self.book_to_know_line.text()，然后再传给show_book_info(book_name)居然就搜索不到了，太诡异了
-
+        start = datetime.datetime.now()
         # 算法部分
-        sql_f3 = "SELECT * FROM douban_book_users WHERE read_num<=500"  # 滤除读书多的用户，不作训练集
+        # 准备训练数据
+        sql_f3 = "SELECT * FROM douban_book_users WHERE read_num<=50"  # 滤除读书多的用户，不然书籍多了，算法算的很久
         self.train = dict()
         self.cur.execute(sql_f3)
         results3 = self.cur.fetchall()
@@ -93,15 +93,18 @@ class MainWindow(QWidget):
             # 因为read_book_and_score这个字段有些数据是不闭合的，所以要检查一下
             self._user = results3[i][1]  # 提取每个用户名
             if results3[i][3][-1] == '}':
-                self.new_json = eval(results3[i][3])  # 这个eval非常关键！！！
+                self.new_json = eval(results3[i][3])  # 转换成字典dict形式
                 self.train.setdefault(self._user, self.new_json)
             else:
                 self.new_json = eval(results3[i][3] + '}')
                 self.train.setdefault(self._user, self.new_json)
-
+        # 算法推荐
         self.algorithm = RecommendItemCF(self.train)
-        self.algorithm.ItemSimilarity()
-        self.rec_books = self.algorithm.recommend(self.user)
+        self.algorithm.ItemSimilarity()  # 算物品相似度
+        self.rec_books = self.algorithm.recommend(self.user)  # 获得推荐书籍
+        end = datetime.datetime.now()
+        print("算法运行时间:" + str((end-start).seconds) + "秒")
+        print(self.rec_books)
 
         self.v1_layout = QVBoxLayout()
         self.v2_layout = QVBoxLayout()
@@ -141,21 +144,28 @@ class MainWindow(QWidget):
         self.recommend_table.setColumnCount(5)
         self.recommend_table.setHorizontalHeaderLabels(['书名', '作者', '出版年份', '评分', '评分人数'])
         self.recommend_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.recommend_table.setRowCount(10)
+        self.recommend_table.setRowCount(0)
 
     def set_rec_books_table(self):
         row = self.recommend_table.rowCount()
-        for book in len(self.rec_books):
-            self.recommend_table.insertRow(row)
+        # self.recommend_table.setEditTriggers(QAbstractItemView.NoEditTriggers) 表格不可编辑
+        for book in self.rec_books:
             empty = self.books_df[self.books_df.book_name == book].empty
             if empty:
-                continue  # 说明书库里没有这本书，直接跳过不插入此本
-            book_index = self.books_df[self.books_df.book_name == book].index[0]
-            rec_book_name = "《" + self.books_df.iloc[book_index][0] + "》"
-            rec_book_author = self.books_df.iloc[book_index][1]
-            rec_book_year = self.books_df.iloc[book_index][2]
-            rec_book_score = str(self.books_df.iloc[book_index][3])
-            rec_book_rating_num = str(self.books_df.iloc[book_index][4])
+                rec_book_name = "《" + book + "》"
+                rec_book_author = "未知"
+                rec_book_year = "未知"
+                rec_book_score = "未知"
+                rec_book_rating_num = "未知"
+                # 说明书库里没有这本书，直接跳过不插入此本
+            else:
+                book_index = self.books_df[self.books_df.book_name == book].index[0]
+                rec_book_name = "《" + self.books_df.iloc[book_index][0] + "》"
+                rec_book_author = self.books_df.iloc[book_index][1]
+                rec_book_year = self.books_df.iloc[book_index][2]
+                rec_book_score = str(self.books_df.iloc[book_index][3])
+                rec_book_rating_num = str(self.books_df.iloc[book_index][4])
+            self.recommend_table.insertRow(row)
             self.recommend_table.setItem(row, 0, QTableWidgetItem(rec_book_name))
             self.recommend_table.setItem(row, 1, QTableWidgetItem(rec_book_author))
             self.recommend_table.setItem(row, 2, QTableWidgetItem(rec_book_year))
@@ -170,6 +180,7 @@ class MainWindow(QWidget):
 
     def set_hot_books_table(self):
         row = self.hot_books_table.rowCount()
+        # self.hot_books_table.setEditTriggers(QAbstractItemView.NoEditTriggers) 表格不可编辑
         for i in range(len(self.hot_books)):
             self.hot_books_table.insertRow(row)
             hot_book_name = "《" + self.hot_books.iloc[i][0] + "》"
@@ -196,12 +207,12 @@ class MainWindow(QWidget):
 
     def show_book_info(self, book_name):
         """展示书籍详细信息窗口"""
-        self.book_info_window = BookInfo(book_name)
+        self.book_info_window = BookInfo(book_name, self.user)
         self.book_info_window.show()
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    mainwindow = MainWindow("殊不方")
+    mainwindow = MainWindow("土豆")
     mainwindow.show()
     sys.exit(app.exec_())

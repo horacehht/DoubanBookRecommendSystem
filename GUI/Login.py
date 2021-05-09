@@ -2,7 +2,7 @@ import res  # 导入资源文件
 import sys
 import pymysql
 from Sign import SignWindow
-# from MainWindow import MainWindow
+from MainWindow import MainWindow
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout, QWidget, QLineEdit, QPushButton, \
     QGridLayout, QApplication, QMessageBox
@@ -101,9 +101,9 @@ class Login(QWidget):
                 pwd_true = result[4]
                 if pwd_true == pwd_input:
                     QMessageBox.information(self, "通知", "登陆成功")
-                    self.close()  # 关闭注册界面
-                    #self.MainWindow = MainWindow(user_input)
-                    #self.MainWindow.show()
+                    self.close()  # 关闭登录注册界面
+                    self.MainWindow = MainWindow(user_input)
+                    self.MainWindow.show()
                 else:
                     QMessageBox.information(self, '通知', '密码错误！')
                     self.pwd_line.clear()

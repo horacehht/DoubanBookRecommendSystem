@@ -1,6 +1,5 @@
 import sys
-from GUI.Login import Login
-from SearchWindow import SearchWindow
+from Login import Login
 from PyQt5.QtWidgets import QApplication
 
 if __name__ == '__main__':
