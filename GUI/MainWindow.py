@@ -86,6 +86,7 @@ class MainWindow(QWidget):
         # 算法部分
         # 准备训练数据
         sql_f3 = "SELECT * FROM douban_book_users WHERE read_num<=50"  # 滤除读书多的用户，不然书籍多了，算法算的很久
+        # <= 50，96个用户，5秒加载完毕。<= 100，176个用户，24秒加载完毕。
         self.train = dict()
         self.cur.execute(sql_f3)
         results3 = self.cur.fetchall()

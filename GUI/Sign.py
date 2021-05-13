@@ -25,8 +25,11 @@ class SignWindow(QDialog):
         self.pwd_label = QLabel('密码:', self)
         self.for_sure_label = QLabel('确认密码:', self)
         self.user_line = QLineEdit(self)  # 单行文本编辑器
+        self.user_line.setPlaceholderText("请输入您的昵称")
         self.pwd_line = QLineEdit(self)
+        self.pwd_line.setPlaceholderText("请输入密码")
         self.for_sure_line = QLineEdit(self)
+        self.for_sure_line.setPlaceholderText("请二次确认密码")
         self.register_button = QPushButton('注册', self)  # 注册按钮
 
         self.user_h_layout = QHBoxLayout()  # 水平布局

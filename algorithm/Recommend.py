@@ -16,6 +16,11 @@ class RecommendItemCF:
                 self.books.add(book)  # 用内置函数来加快运行速度
         return len(self.books)
 
+    def normalization(self, data):
+        """矩阵归一化，加快运行速度"""
+        _range = np.max(data) - np.min(data)
+        return (data - np.min(data)) / _range
+
     def ItemSimilarity(self):
         """
         C：同现矩阵
@@ -24,17 +29,20 @@ class RecommendItemCF:
         """
         # self.books的索引其实就建立了数字到书的映射
         self.books = list(self.books)
+        self.books_map = {self.books[i]: i for i in range(self.book_num)}  # 字典生成式，加快运行速度
         C = np.zeros([self.book_num, self.book_num])  # 物品-物品的同现矩阵
         N = np.zeros([self.book_num])  # 每本书被多少个用户看过
         # 得到同现矩阵
         for user, books_and_scores in self.train.items():
             for book_A in books_and_scores.keys():
-                N[self.books.index(book_A)] += 1
+                N[self.books_map[book_A]] += 1
                 for book_B in books_and_scores.keys():
                     if book_A == book_B:
                         # 自己跟自己不用计算次数
                         continue
-                    C[self.books.index(book_A)][self.books.index(book_B)] += 1
+                    C[self.books_map[book_A]][self.books_map[book_B]] += 1
+
+        # C = self.normalization(C)貌似只加快了一两秒
 
         # 计算物品相似度矩阵
         self.W = np.zeros([self.book_num, self.book_num])
@@ -46,13 +54,17 @@ class RecommendItemCF:
 
         return self.W
 
+    def PNS(self, k):
+        "Private neighbour Selection"
+        pass
+
     def recommend(self, user, n=20):
         """给用户user推荐兴趣度最高的n本书"""
         # 建立用户评分列向量,n*1，没评分过的计为0
         user_score_v = np.zeros([self.book_num, 1])
         user_score = self.train[user]
         for book, score in user_score.items():
-            user_score_v[self.books.index(book)] = score
+            user_score_v[self.books_map[book]] = score
 
         # 物品相似度矩阵*用户评分矩阵
         interest = np.dot(self.W, user_score_v)  # 兴趣度向量
