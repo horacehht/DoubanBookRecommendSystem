@@ -26,7 +26,7 @@ class BookInfo(QWidget):
         )
         self.cur = self.conn.cursor()
 
-        sql_f = "SELECT * FROM douban_book_release"
+        sql_f = "SELECT * FROM books"
         try:
             self.cur.execute(sql_f)
             results = self.cur.fetchall()
@@ -62,26 +62,40 @@ class BookInfo(QWidget):
             print(e)
 
         try:
-            # 如果数据缺失，就写成空，下同，但我发现数据里空就是''，而不是NaN，所以可以直接赋值
-            self.author = list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].author)[0]
-            self.press = list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].press)[0]
-            self.publishing_year = list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)]
-                                            .publishing_year)[0]
-            if list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].score)[0] == 0:
+            # 如果数据缺失，就写成空
+            if pd.isna(list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].author)[0]):
+                self.author = ''
+            else:
+                self.author = list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].author)[0]
+            if pd.isna(list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].press)[0]):
+                self.press = ''
+            else:
+                self.press = list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].press)[0]
+            if pd.isna(list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].publishing_year)[0]):
+                self.publishing_year = ''
+            else:
+                self.publishing_year = list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].publishing_year)[0]
+            if pd.isna(list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].score)[0]):
                 self.score = str('暂无')
             else:
                 self.score = str(list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].score)[0])
-            self.rating_num = \
-                str(list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].rating_num)[0])
-            if list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].page_num)[0] == 0:
+            if pd.isna(list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].rating_num)[0]):
+                self.rating_num = '0'
+            else:
+                self.rating_num = str(list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].rating_num)[0])
+            if pd.isna(list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].page_num)[0]):
                 self.page_num = str('未知')
             else:
                 self.page_num = \
                     str(list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].page_num)[0])
-            self.ISBN = list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].ISBN)[0]
-
-            self.introduction = \
-                list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].content_introduction)[0]
+            if pd.isna(list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].ISBN)[0]):
+                self.ISBN = "未知"
+            else:
+                self.ISBN = list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].ISBN)[0]
+            if pd.isna(list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].content_introduction)[0]):
+                self.introduction = ''
+            else:
+                self.introduction = list(self.books_detailed[self.books_detailed.book_name == "{}".format(self.name)].content_introduction)[0]
 
             self.name_label = QLabel("<font size=10><b>" + self.name + "</b></font>")
             self.author_label = QLabel("<h2>" + "作者: " + self.author + "</h2>")

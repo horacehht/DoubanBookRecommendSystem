@@ -54,10 +54,6 @@ class RecommendItemCF:
 
         return self.W
 
-    def PNS(self, k):
-        "Private neighbour Selection"
-        pass
-
     def recommend(self, user, n=20):
         """给用户user推荐兴趣度最高的n本书"""
         # 建立用户评分列向量,n*1，没评分过的计为0

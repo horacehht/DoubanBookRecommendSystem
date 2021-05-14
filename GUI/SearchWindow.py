@@ -20,7 +20,7 @@ class SearchWindow(QWidget):
             charset="utf8"
         )
         self.cur = self.conn.cursor()
-        sql_f = "SELECT * FROM douban_book_release"
+        sql_f = "SELECT * FROM books"
         try:
             self.cur.execute(sql_f)
             results = self.cur.fetchall()
@@ -33,6 +33,7 @@ class SearchWindow(QWidget):
         self.conn.close()  # 关闭连接
 
         self.books_df = self.books_df.iloc[:, [0, 1, 2, 3, 4, 5]]
+        self.books_df = self.books_df.dropna()
         self.books_df = self.books_df.drop_duplicates(subset='book_name')
         self.changed_df = self.books_df  # 一个副本，依照这个来进行输出，而更改这个的排序方式，就可更改输出的排序
         self.setWindowTitle("书籍搜索")

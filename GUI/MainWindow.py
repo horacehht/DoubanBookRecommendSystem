@@ -44,7 +44,7 @@ class MainWindow(QWidget):
         self.user_df = self.user_df.iloc[:, [1, 2, 3]]  # 选取了名字，读书数量，读的书及相应评分
 
         # 读取书籍数据存入books_df
-        sql_f2 = "SELECT * FROM douban_book_release"
+        sql_f2 = "SELECT * FROM books"
         try:
             self.cur.execute(sql_f2)
             results2 = self.cur.fetchall()
@@ -66,6 +66,7 @@ class MainWindow(QWidget):
         self.recommend_table = QTableWidget(self)
         self.hot_books_label = QLabel("<h1>热门书籍:</h1>", self)
         self.hot_books_table = QTableWidget(self)
+
         hot_books_ori = self.books_df[self.books_df.score > 8.5]
         self.hot_books = hot_books_ori[hot_books_ori.rating_num > 50000]  # 选取评分大于8.5，评论人数大于50000的书籍
         self.hot_books = self.hot_books.sort_values(by=['rating_num'], ascending=True)  # 按评论人数进行排序
@@ -162,10 +163,22 @@ class MainWindow(QWidget):
             else:
                 book_index = self.books_df[self.books_df.book_name == book].index[0]
                 rec_book_name = "《" + self.books_df.iloc[book_index][0] + "》"
-                rec_book_author = self.books_df.iloc[book_index][1]
-                rec_book_year = self.books_df.iloc[book_index][2]
-                rec_book_score = str(self.books_df.iloc[book_index][3])
-                rec_book_rating_num = str(self.books_df.iloc[book_index][4])
+                if pd.isna(self.books_df.iloc[book_index][1]):
+                    rec_book_author = ''
+                else:
+                    rec_book_author = self.books_df.iloc[book_index][1]
+                if pd.isna(self.books_df.iloc[book_index][2]):
+                    rec_book_year = ''
+                else:
+                    rec_book_year = self.books_df.iloc[book_index][2]
+                if pd.isna(self.books_df.iloc[book_index][3]):
+                    rec_book_score = '0'
+                else:
+                    rec_book_score = str(self.books_df.iloc[book_index][3])
+                if pd.isna(self.books_df.iloc[book_index][4]):
+                    rec_book_rating_num = '0'
+                else:
+                    rec_book_rating_num = str(self.books_df.iloc[book_index][4])
             self.recommend_table.insertRow(row)
             self.recommend_table.setItem(row, 0, QTableWidgetItem(rec_book_name))
             self.recommend_table.setItem(row, 1, QTableWidgetItem(rec_book_author))
